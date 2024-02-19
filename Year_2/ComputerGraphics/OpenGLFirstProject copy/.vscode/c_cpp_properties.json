@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:\\msys64\\External Libs\\GLEW\\include\\**",
+                "C:\\msys64\\External Libs\\GLFW\\include\\**",
+                "C:\\msys64\\External Libs\\GLM\\**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ]
+        }
+    ],
+    "version": 4
+}
