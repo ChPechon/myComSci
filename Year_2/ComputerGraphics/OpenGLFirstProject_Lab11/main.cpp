@@ -7,9 +7,9 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <GLM/glm.hpp>
+#include <GLM/gtc/matrix_transform.hpp>
+#include <GLM/gtc/type_ptr.hpp>
 
 #include <vector>
 #include <cmath>
@@ -29,19 +29,19 @@ std::vector<Shader> shaderList;
 
 float yaw = -90.0f, pitch = 0.0f;
 
-// Vertex Shader
 static const char *vShader = "Shaders/shader.vert";
 
-// Fragment Shader
 static const char *fShader = "Shaders/shader.frag";
+
+glm::vec3 lightColour = glm::vec3(0.0f, 1.0f, 1.0f);
 
 void CreateTriangle()
 {
     GLfloat vertices[] =
         {
-            // pos                       //aTexCoord
+            // pos //TexCoord
             -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, -1.0f, 1.0f, 0.5f, 0.0f,
+            0.0, -1.0f, 1.0f, 0.5f, 0.0f,
             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
             0.0f, 1.0f, 0.0f, 0.5f, 1.0f};
 
@@ -51,19 +51,13 @@ void CreateTriangle()
             1, 3, 2,
             2, 3, 0,
             0, 1, 2};
+
     Mesh *obj1 = new Mesh();
     obj1->CreateMesh(vertices, indices, 20, 12);
     for (int i = 0; i < 10; i++)
     {
         meshList.push_back(obj1);
     }
-}
-
-void CreateShaders()
-{
-    Shader *shader1 = new Shader();
-    shader1->CreateFromFiles(vShader, fShader);
-    shaderList.push_back(*shader1);
 }
 
 void CreateOBJ()
@@ -81,6 +75,12 @@ void CreateOBJ()
     {
         std::cout << "Failed to load model" << std::endl;
     }
+}
+void CreateShaders()
+{
+    Shader *shader1 = new Shader();
+    shader1->CreateFromFiles(vShader, fShader);
+    shaderList.push_back(*shader1);
 }
 
 void checkMouse()
@@ -103,7 +103,6 @@ void checkMouse()
     pitch -= yoffset * sensitivity;
 
     pitch = glm::clamp(pitch, -89.0f, 89.0f);
-    // cout << xpos << " " << ypos << endl;
 }
 
 int main()
@@ -116,7 +115,6 @@ int main()
 
     glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / (GLfloat)mainWindow.getBufferHeight(), 0.1f, 100.0f);
 
-    // Texture
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -127,7 +125,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     int width, height, nrChannels;
-    unsigned char *data = stbi_load("Textures/uvmap.png", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load("Texture/uvmap.png", &width, &height, &nrChannels, 0);
 
     if (data)
     {
@@ -140,9 +138,10 @@ int main()
     }
 
     stbi_image_free(data);
-    // glBindTexture(GL_TEXTURE_2D, 0);
 
-    GLuint uniformModel = 0, uniformProjection = 0, uniformView = 0;
+    GLuint uniformModel = 0;
+    GLuint uniformProjection = 0;
+    GLuint uniformView = 0;
 
     glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -154,14 +153,12 @@ int main()
 
     float lastTime = static_cast<float>(glfwGetTime());
 
-    // Loop until window closed
     while (!mainWindow.getShouldClose())
     {
         float currentTime = static_cast<float>(glfwGetTime());
         float deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
-        // Get + Handle user input events
         glfwPollEvents();
 
         checkMouse();
@@ -194,16 +191,13 @@ int main()
 
         cameraPos.y = 0;
 
-        // Clear window
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // draw here
         shaderList[0].UseShader();
         uniformModel = shaderList[0].GetUniformLocation("model");
         uniformView = shaderList[0].GetUniformLocation("view");
         uniformProjection = shaderList[0].GetUniformLocation("projection");
-
         glm::vec3 pyramidPositions[] =
             {
                 glm::vec3(0.0f, 0.0f, -2.5f),
@@ -231,7 +225,8 @@ int main()
 
         view = glm::lookAt(cameraPos, cameraPos + cameraDirection, cameraUp);
 
-        // Object
+        glUniform3fv(shaderList[0].GetUniformLocation("lightColour"), 1, (GLfloat *)&lightColour);
+
         for (int i = 0; i < 10; i++)
         {
             glm::mat4 model(1.0f);
@@ -244,12 +239,11 @@ int main()
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texture);
+
             meshList[i]->RenderMesh();
         }
-        glUseProgram(0);
-        // end draw
 
-        // magic word - SAKURA
+        glUseProgram(0);
 
         mainWindow.swapBuffers();
     }
